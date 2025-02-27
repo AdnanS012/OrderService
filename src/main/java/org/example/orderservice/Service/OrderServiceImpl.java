@@ -76,4 +76,12 @@ public class OrderServiceImpl implements OrderService {
         );
 
 }
+    public List<RestaurantDTO> getAllRestaurants() {
+        return catalogClient.getAllRestaurants();
+    }
+
+    public List<MenuItemDTO> getMenuItemsByRestaurant(Long restaurantId) {
+        return catalogClient.getMenuItemsByRestaurantId(restaurantId);
+    }
+
 }
