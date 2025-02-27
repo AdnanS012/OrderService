@@ -9,9 +9,9 @@ import org.example.orderservice.OrderItem.OrderItem;
 import org.example.orderservice.Repository.OrderRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -35,12 +35,15 @@ public class OrderServiceImpl implements OrderService {
       //validate each MenuItem
       List<OrderItemDTO> validItems = new ArrayList<>();
       List<OrderItem> orderItem = new ArrayList<>();
+        BigDecimal totalPrice = BigDecimal.ZERO;
 
       for(OrderItemDTO item: orderRequest.getItems()){
           MenuItemDTO menuItem = catalogClient.getMenuItemById(item.getMenuItemId());
 
       if(menuItem!=null){
-          validItems.add(new OrderItemDTO(menuItem.getId(), menuItem.getName(), item.getQuantity(), menuItem.getPrice()));
+          BigDecimal itemTotal = menuItem.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())); //Calculate total price
+            totalPrice = totalPrice.add(itemTotal); //Add item total to order total
+          validItems.add(new OrderItemDTO(menuItem.getId(), menuItem.getName(), item.getQuantity()));
             orderItem.add(new OrderItem(menuItem.getId(), item.getQuantity(), menuItem.getPrice()));
       }
       }
@@ -56,7 +59,8 @@ public class OrderServiceImpl implements OrderService {
         orderItem, // Now correctly storing OrderItem list
         orderRequest.getOrderInstructions(),
         orderRequest.getDeliveryInstructions(),
-        OrderStatus.CREATED
+        OrderStatus.CREATED,
+        totalPrice
                 );
         Order savedOrder = orderRepository.save(order);
 
@@ -67,7 +71,8 @@ public class OrderServiceImpl implements OrderService {
                 validItems,
                 savedOrder.getOrderInstructions(),
                 savedOrder.getDeliveryInstructions(),
-                savedOrder.getStatus()
+                savedOrder.getStatus(),
+                savedOrder.getTotalPrice()
         );
 
 }

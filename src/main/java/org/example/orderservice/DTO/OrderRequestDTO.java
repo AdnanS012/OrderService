@@ -1,5 +1,6 @@
 package org.example.orderservice.DTO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -9,6 +10,7 @@ public class OrderRequestDTO {
     private List<OrderItemDTO> items;
     private String orderInstructions;
     private String deliveryInstructions;
+    private BigDecimal totalPrice;
 
     public OrderRequestDTO() {}
 
@@ -26,5 +28,6 @@ public class OrderRequestDTO {
     public List<OrderItemDTO> getItems() { return items; }
     public String getOrderInstructions() { return orderInstructions; }
     public String getDeliveryInstructions() { return deliveryInstructions; }
+    public BigDecimal getTotalPrice() { return totalPrice; }
 
 }

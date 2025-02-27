@@ -2,6 +2,7 @@ package org.example.orderservice.DTO;
 
 import org.example.orderservice.Enum.OrderStatus;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class OrderResponseDTO {
@@ -12,11 +13,12 @@ public class OrderResponseDTO {
     private String orderInstructions;
     private String deliveryInstructions;
     private OrderStatus status;
+    private BigDecimal totalPrice;
 
     public OrderResponseDTO() {}
 
     public OrderResponseDTO(Long orderId, Long userId, Long restaurantId, List<OrderItemDTO> items,
-                            String orderInstructions, String deliveryInstructions, OrderStatus status) {
+                            String orderInstructions, String deliveryInstructions, OrderStatus status, BigDecimal totalPrice) {
         this.orderId = orderId;
         this.userId = userId;
         this.restaurantId = restaurantId;
@@ -24,6 +26,7 @@ public class OrderResponseDTO {
         this.orderInstructions = orderInstructions;
         this.deliveryInstructions = deliveryInstructions;
         this.status = status;
+        this.totalPrice = totalPrice;
     }
     public Long getOrderId() { return orderId; }
     public Long getUserId() { return userId; }
@@ -32,5 +35,5 @@ public class OrderResponseDTO {
     public String getOrderInstructions() { return orderInstructions; }
     public String getDeliveryInstructions() { return deliveryInstructions; }
     public OrderStatus getStatus() { return status; }
-
+    public BigDecimal getTotalPrice() { return totalPrice; }
 }
