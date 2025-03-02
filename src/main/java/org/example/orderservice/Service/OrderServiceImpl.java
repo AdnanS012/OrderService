@@ -43,7 +43,7 @@ public class OrderServiceImpl implements OrderService {
       if(menuItem!=null){
           BigDecimal itemTotal = menuItem.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())); //Calculate total price
             totalPrice = totalPrice.add(itemTotal); //Add item total to order total
-          validItems.add(new OrderItemDTO(menuItem.getId(), menuItem.getName(), item.getQuantity()));
+          validItems.add(new OrderItemDTO(menuItem.getId(), item.getQuantity()));
             orderItem.add(new OrderItem(menuItem.getId(), item.getQuantity(), menuItem.getPrice()));
       }
       }
@@ -76,6 +76,34 @@ public class OrderServiceImpl implements OrderService {
         );
 
 }
+
+    @Override
+    public List<OrderResponseDTO> getOrdersByUserId(Long userId) {
+        List<Order> orders = orderRepository.findByUserId(userId);
+        List<OrderResponseDTO> orderResponseDTOs = new ArrayList<>();
+
+        for (Order order : orders) {
+            List<OrderItemDTO> orderItems = new ArrayList<>();
+            for (OrderItem item : order.getOrderItems()) {
+                orderItems.add(new OrderItemDTO(item.getMenuItemId(), item.getQuantity()));
+            }
+
+            OrderResponseDTO orderResponseDTO = new OrderResponseDTO(
+                    order.getId(),
+                    order.getUserId(),
+                    order.getRestaurantId(),
+                    orderItems,
+                    order.getOrderInstructions(),
+                    order.getDeliveryInstructions(),
+                    order.getStatus(),
+                    order.getTotalPrice()
+            );
+            orderResponseDTOs.add(orderResponseDTO);
+        }
+
+        return orderResponseDTOs;
+    }
+
     public List<RestaurantDTO> getAllRestaurants() {
         return catalogClient.getAllRestaurants();
     }

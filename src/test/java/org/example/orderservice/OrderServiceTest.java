@@ -37,7 +37,7 @@ public class OrderServiceTest {
         OrderRequestDTO requestDTO = new OrderRequestDTO(
                 1L,
                 101L,
-                List.of(new OrderItemDTO(2L, "Pizza", 3)),
+                List.of(new OrderItemDTO(2L, 3)),
                 "Extra spicy",
                 "Leave at door"
         );
@@ -79,7 +79,6 @@ public class OrderServiceTest {
         assertEquals(1L, responseDTO.getUserId());
         assertEquals(101L, responseDTO.getRestaurantId());
         assertEquals(1, responseDTO.getItems().size());
-        assertEquals("Pizza", responseDTO.getItems().get(0).getName());
         assertEquals(3, responseDTO.getItems().get(0).getQuantity());
 
         assertEquals("Extra spicy", responseDTO.getOrderInstructions());
@@ -95,7 +94,7 @@ public class OrderServiceTest {
         OrderRequestDTO requestDTO = new OrderRequestDTO(
                 1L,
                 101L,
-                List.of(new OrderItemDTO(2L, "Pizza", 3)),
+                List.of(new OrderItemDTO(2L, 3)),
                 "Extra spicy",
                 "Leave at door"
         );
@@ -107,6 +106,50 @@ public class OrderServiceTest {
 
         // When & Then
         assertThrows(InvalidOrderException.class, () -> orderService.createOrder(requestDTO));
+    }
+    @Test
+    public void shouldThrowExceptionWhenRestaurantNotFound() {
+        // Given
+        OrderRequestDTO requestDTO = new OrderRequestDTO(
+                1L,
+                101L,
+                List.of(new OrderItemDTO(2L, 3)),
+                "Extra spicy",
+                "Leave at door"
+        );
+
+        // Mocking
+        when(catalogClient.getRestaurantById(101L)).thenReturn(null);
+
+        // When & Then
+        assertThrows(InvalidOrderException.class, () -> orderService.createOrder(requestDTO));
+    }
+
+    @Test
+    public void testGetOrdersByUserId() {
+        // Given
+        Long userId = 1L;
+        List<Order> orders = List.of(
+                new Order(1L, 1L, List.of(new OrderItem(2L, 3, new BigDecimal("200.00"))), "Extra spicy", "Leave at door", OrderStatus.CREATED, new BigDecimal("600.00"))
+        );
+
+        // Mocking
+        when(orderRepository.findByUserId(userId)).thenReturn(orders);
+
+        // When
+        List<OrderResponseDTO> responseDTOs = orderService.getOrdersByUserId(userId);
+
+        // Then
+        assertNotNull(responseDTOs);
+        assertEquals(1, responseDTOs.size());
+        assertEquals(1L, responseDTOs.get(0).getUserId());
+        assertEquals(1L, responseDTOs.get(0).getRestaurantId());
+        assertEquals(1, responseDTOs.get(0).getItems().size());
+        assertEquals(3, responseDTOs.get(0).getItems().get(0).getQuantity());
+        assertEquals("Extra spicy", responseDTOs.get(0).getOrderInstructions());
+        assertEquals("Leave at door", responseDTOs.get(0).getDeliveryInstructions());
+        assertEquals(OrderStatus.CREATED, responseDTOs.get(0).getStatus());
+        assertEquals(new BigDecimal("600.00"), responseDTOs.get(0).getTotalPrice());
     }
 
 }

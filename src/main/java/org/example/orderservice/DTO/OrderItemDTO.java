@@ -1,19 +1,21 @@
 package org.example.orderservice.DTO;
 
+import org.jetbrains.annotations.NotNull;
+
 public class OrderItemDTO {
+    @NotNull
     private Long menuItemId;
+    @NotNull
     private int quantity;
-    private String name;
     public OrderItemDTO() {}
 
-    public OrderItemDTO(Long menuItemId, String name,int quantity) {
+    public OrderItemDTO(Long menuItemId, int quantity) {
         this.menuItemId = menuItemId;
         this.quantity = quantity;
-        this.name = name;
 
     }
 
     public Long getMenuItemId() { return menuItemId; }
     public int getQuantity() { return quantity; }
-    public String getName() { return name; }
 }
+

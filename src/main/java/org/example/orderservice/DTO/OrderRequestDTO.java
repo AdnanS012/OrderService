@@ -1,12 +1,17 @@
 package org.example.orderservice.DTO;
+import jakarta.validation.constraints.NotNull;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 
 
 public class OrderRequestDTO {
+    @NotNull
     private Long userId;
+    @NotNull
     private Long restaurantId;
+    @NotNull
     private List<OrderItemDTO> items;
     private String orderInstructions;
     private String deliveryInstructions;

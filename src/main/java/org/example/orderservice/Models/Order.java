@@ -3,6 +3,7 @@ package org.example.orderservice.Models;
 import jakarta.persistence.*;
 import org.example.orderservice.Enum.OrderStatus;
 import org.example.orderservice.OrderItem.OrderItem;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,6 +14,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long userId;
+    @NotNull
     private Long restaurantId;
 
     @ElementCollection
@@ -39,7 +41,7 @@ public class Order {
     public Long getId() { return id; }
     public Long getUserId() { return userId; }
     public Long getRestaurantId() { return restaurantId; }
-    public List<OrderItem> getItems() { return items; }
+    public List<OrderItem> getOrderItems() { return items; }
     public String getOrderInstructions() { return orderInstructions; }
     public String getDeliveryInstructions() { return deliveryInstructions; }
     public OrderStatus getStatus() { return status; }
