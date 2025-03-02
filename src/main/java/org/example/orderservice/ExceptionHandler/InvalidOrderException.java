@@ -1,4 +1,4 @@
-package org.example.orderservice;
+package org.example.orderservice.ExceptionHandler;
 
 
 public class InvalidOrderException extends RuntimeException {

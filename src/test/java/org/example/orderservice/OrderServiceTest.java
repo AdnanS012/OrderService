@@ -3,6 +3,7 @@ package org.example.orderservice;
 import org.example.orderservice.CatalogClient.CatalogClient;
 import org.example.orderservice.DTO.*;
 import org.example.orderservice.Enum.OrderStatus;
+import org.example.orderservice.ExceptionHandler.InvalidOrderException;
 import org.example.orderservice.Models.Order;
 import org.example.orderservice.OrderItem.OrderItem;
 import org.example.orderservice.Repository.OrderRepository;

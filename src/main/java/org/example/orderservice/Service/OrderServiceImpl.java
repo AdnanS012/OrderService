@@ -3,7 +3,8 @@ package org.example.orderservice.Service;
 import org.example.orderservice.CatalogClient.CatalogClient;
 import org.example.orderservice.DTO.*;
 import org.example.orderservice.Enum.OrderStatus;
-import org.example.orderservice.InvalidOrderException;
+import org.example.orderservice.ExceptionHandler.InvalidOrderException;
+import org.example.orderservice.ExceptionHandler.OrderNotFoundException;
 import org.example.orderservice.Models.Order;
 import org.example.orderservice.OrderItem.OrderItem;
 import org.example.orderservice.Repository.OrderRepository;
@@ -111,5 +112,14 @@ public class OrderServiceImpl implements OrderService {
     public List<MenuItemDTO> getMenuItemsByRestaurant(Long restaurantId) {
         return catalogClient.getMenuItemsByRestaurantId(restaurantId);
     }
+    public OrderResponseDTO updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
+
+        order.updateStatus(newStatus);
+        orderRepository.save(order);
+        return null;
+    }
+
 
 }

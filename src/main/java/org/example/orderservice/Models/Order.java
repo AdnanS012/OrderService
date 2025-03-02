@@ -25,7 +25,7 @@ public class Order {
     private BigDecimal totalPrice;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus status;
+    private OrderStatus status = OrderStatus.CREATED;
 
     public Order(){}
 
@@ -38,6 +38,14 @@ public class Order {
         this.status = status;
         this.totalPrice = totalPrice;
 }
+
+    public void updateStatus(OrderStatus newStatus) {
+        if (this.status == OrderStatus.DELIVERED) {
+            throw new IllegalStateException("Cannot change status of a delivered order.");
+        }
+        this.status = newStatus;
+    }
+
     public Long getId() { return id; }
     public Long getUserId() { return userId; }
     public Long getRestaurantId() { return restaurantId; }

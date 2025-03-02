@@ -2,6 +2,9 @@ package org.example.orderservice.Controller;
 
 import org.example.orderservice.DTO.OrderRequestDTO;
 import org.example.orderservice.DTO.OrderResponseDTO;
+import org.example.orderservice.DTO.UpdateOrderStatusRequest;
+import org.example.orderservice.Enum.OrderStatus;
+import org.example.orderservice.ExceptionHandler.OrderNotFoundException;
 import org.example.orderservice.Service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +39,22 @@ public class OrderController {
       } catch (RuntimeException e) {
           throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Service error", e);
       }
+    }
+
+    @PatchMapping("/{orderId}/status")
+    public ResponseEntity<String> updateOrderStatus(
+            @PathVariable Long orderId,
+           @Validated @RequestBody UpdateOrderStatusRequest request) {  // ✅ Accepting request body
+        try{
+            orderService.updateOrderStatus(orderId, request.getStatus());
+            return ResponseEntity.ok("Order status updated successfully");
+
+        }catch (OrderNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Service error", e);
+        }
     }
 
 
