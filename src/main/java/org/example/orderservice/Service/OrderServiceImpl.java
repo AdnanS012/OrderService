@@ -9,6 +9,8 @@ import org.example.orderservice.Models.Order;
 import org.example.orderservice.OrderItem.OrderItem;
 import org.example.orderservice.Repository.OrderRepository;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -17,35 +19,56 @@ import java.util.List;
 @Service
 public class OrderServiceImpl implements OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
     private final OrderRepository orderRepository;
     private final CatalogClient catalogClient;
+    private final FulfillmentClient fulfillmentClient;
 
-    public OrderServiceImpl(OrderRepository orderRepository, CatalogClient catalogClient) {
+    public OrderServiceImpl(OrderRepository orderRepository, CatalogClient catalogClient, FulfillmentClient fulfillmentClient) {
         this.orderRepository = orderRepository;
         this.catalogClient = catalogClient;
+        this.fulfillmentClient = fulfillmentClient;
     }
 
 
     @Override
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequest) {
+        log.info("Received order request: {}", orderRequest);
+
         //validate the Restaurant
         RestaurantDTO restaurant = catalogClient.getRestaurantById(orderRequest.getRestaurantId());
       if(restaurant == null){
           throw new InvalidOrderException("Restaurant not found");
       }
+        log.info("Restaurant found: {}", restaurant);
       //validate each MenuItem
       List<OrderItemDTO> validItems = new ArrayList<>();
       List<OrderItem> orderItem = new ArrayList<>();
         BigDecimal totalPrice = BigDecimal.ZERO;
 
       for(OrderItemDTO item: orderRequest.getItems()){
-          MenuItemDTO menuItem = catalogClient.getMenuItemById(item.getMenuItemId());
+          if (item.getMenuItemId() == null) {
+              log.error("MenuItem ID is null in order request: {}", item);
+              throw new InvalidOrderException("Menu item ID cannot be null.");
+          }
+          log.info("Fetching menu item with ID: {}", item.getMenuItemId());
+          MenuItemDTO menuItem = catalogClient.getMenuItemById(orderRequest.getRestaurantId(), item.getMenuItemId());
 
       if(menuItem!=null){
+          log.info("Fetched menu item: {}", menuItem);
+
+          //Ensure the menu item belongs to the correct restaurant
+          if (!menuItem.getRestaurantId().equals(orderRequest.getRestaurantId())) {
+              log.warn("Menu item {} does not belong to restaurant {}", menuItem.getId(), orderRequest.getRestaurantId());
+              continue; // Skip this item
+          }
+
           BigDecimal itemTotal = menuItem.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())); //Calculate total price
             totalPrice = totalPrice.add(itemTotal); //Add item total to order total
           validItems.add(new OrderItemDTO(menuItem.getId(), item.getQuantity()));
             orderItem.add(new OrderItem(menuItem.getId(), item.getQuantity(), menuItem.getPrice()));
+      }else {
+          log.warn("Menu item {} not found", item.getMenuItemId());
       }
       }
         if (validItems.isEmpty()) {
@@ -64,6 +87,15 @@ public class OrderServiceImpl implements OrderService {
         totalPrice
                 );
         Order savedOrder = orderRepository.save(order);
+        //Step 4: Call FulfillmentService via gRPC to Assign Delivery Personnel
+        pb.AssignOrderResponse fulfillmentResponse = fulfillmentClient.assignOrder(
+                savedOrder.getId().toString(),
+                orderRequest.getDeliveryInstructions() // Assuming location is in delivery instructions
+        );
+        // 🔹 Step 5: Update Order Status to "ASSIGNED"
+        savedOrder.updateStatus(OrderStatus.ASSIGNED);
+        orderRepository.save(savedOrder);
+        log.info("Order {} assigned to delivery personnel: {}", savedOrder.getId(), fulfillmentResponse.getDeliveryPersonnelId());
 
         return new OrderResponseDTO(
                 savedOrder.getId(),
@@ -73,7 +105,8 @@ public class OrderServiceImpl implements OrderService {
                 savedOrder.getOrderInstructions(),
                 savedOrder.getDeliveryInstructions(),
                 savedOrder.getStatus(),
-                savedOrder.getTotalPrice()
+                savedOrder.getTotalPrice(),
+                fulfillmentResponse.getDeliveryPersonnelId()
         );
 
 }
@@ -97,7 +130,9 @@ public class OrderServiceImpl implements OrderService {
                     order.getOrderInstructions(),
                     order.getDeliveryInstructions(),
                     order.getStatus(),
-                    order.getTotalPrice()
+                    order.getTotalPrice(),
+                    null
+
             );
             orderResponseDTOs.add(orderResponseDTO);
         }

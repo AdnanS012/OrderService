@@ -7,12 +7,14 @@ import org.example.orderservice.ExceptionHandler.InvalidOrderException;
 import org.example.orderservice.Models.Order;
 import org.example.orderservice.OrderItem.OrderItem;
 import org.example.orderservice.Repository.OrderRepository;
+import org.example.orderservice.Service.FulfillmentClient;
 import org.example.orderservice.Service.OrderServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,6 +30,9 @@ public class OrderServiceTest {
 
     @Mock
     private CatalogClient catalogClient;
+
+    @Mock
+    private FulfillmentClient fulfillmentClient;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -45,32 +50,39 @@ public class OrderServiceTest {
         RestaurantDTO restaurantDTO = new RestaurantDTO(101L, "Test Restaurant", "Test Address");
         MenuItemDTO menuItemDTO = new MenuItemDTO(2L, "Pizza", "Delicious pizza", new BigDecimal("200.00"), 101L);
 
-        BigDecimal expectedTotalPrice = new BigDecimal("600.00");
+        BigDecimal expectedTotalPrice = menuItemDTO.getPrice().multiply(new BigDecimal(requestDTO.getItems().get(0).getQuantity()));
 
-        Order order = new Order(
-                1L,
-                101L,
+        Order savedOrderBeforeFulfillment = new Order(
+                1L, 101L,
                 List.of(new OrderItem(2L, 3, new BigDecimal("200.00"))),
                 "Extra spicy",
                 "Leave at door",
                 OrderStatus.CREATED,
                 expectedTotalPrice
         );
+        ReflectionTestUtils.setField(savedOrderBeforeFulfillment, "id", 1001L); // Ensure ID is set
 
-        Order savedOrder = new Order(
-                1L,
-                101L,
+        Order savedOrderAfterFulfillment = new Order(
+                1L, 101L,
                 List.of(new OrderItem(2L, 3, new BigDecimal("200.00"))),
                 "Extra spicy",
                 "Leave at door",
-                OrderStatus.CREATED,
+                OrderStatus.ASSIGNED,
                 expectedTotalPrice
         );
+        ReflectionTestUtils.setField(savedOrderAfterFulfillment, "id", 1001L);
+
+        pb.AssignOrderResponse fulfillmentResponse = pb.AssignOrderResponse.newBuilder()
+                .setDeliveryPersonnelId("DE-101")
+                .build();
 
         // Mocking
         when(catalogClient.getRestaurantById(101L)).thenReturn(restaurantDTO);
-        when(catalogClient.getMenuItemById(2L)).thenReturn(menuItemDTO);
-        when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
+        when(catalogClient.getMenuItemById(101L, 2L)).thenReturn(menuItemDTO);
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> savedOrderBeforeFulfillment) // First save (CREATED status)
+                .thenAnswer(invocation -> savedOrderAfterFulfillment); // Second save (ASSIGNED status)
+        when(fulfillmentClient.assignOrder(anyString(), anyString())).thenReturn(fulfillmentResponse);
 
         // When
         OrderResponseDTO responseDTO = orderService.createOrder(requestDTO);
@@ -81,13 +93,17 @@ public class OrderServiceTest {
         assertEquals(101L, responseDTO.getRestaurantId());
         assertEquals(1, responseDTO.getItems().size());
         assertEquals(3, responseDTO.getItems().get(0).getQuantity());
-
         assertEquals("Extra spicy", responseDTO.getOrderInstructions());
         assertEquals("Leave at door", responseDTO.getDeliveryInstructions());
-        assertEquals(OrderStatus.CREATED, responseDTO.getStatus());
+        assertEquals(OrderStatus.ASSIGNED, responseDTO.getStatus()); // Verify final status
         assertEquals(expectedTotalPrice, responseDTO.getTotalPrice());
+        assertNotNull(responseDTO.getDeliveryPersonnelId(), "Delivery personnel ID should be assigned");
 
+        // Verify interactions
+        verify(orderRepository, times(2)).save(any(Order.class)); // Should be saved twice
+        verify(fulfillmentClient, times(1)).assignOrder(anyString(), anyString()); // Ensure fulfillment is triggered
     }
+
 
     @Test
     public void shouldThrowExceptionWhenItemDoesNotExistInCatalog() {
@@ -103,7 +119,7 @@ public class OrderServiceTest {
 
         // Mocking
         when(catalogClient.getRestaurantById(101L)).thenReturn(restaurantDTO);
-        when(catalogClient.getMenuItemById(2L)).thenReturn(null);
+        when(catalogClient.getMenuItemById(101L, 2L)).thenReturn(null);
 
         // When & Then
         assertThrows(InvalidOrderException.class, () -> orderService.createOrder(requestDTO));

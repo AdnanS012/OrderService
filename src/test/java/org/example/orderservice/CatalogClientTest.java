@@ -7,7 +7,6 @@ import org.example.orderservice.DTO.RestaurantDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -36,6 +35,7 @@ public class CatalogClientTest {
     void setUp() {
         // Mock RestTemplateBuilder to return a mock RestTemplate
         when(restTemplateBuilder.build()).thenReturn(restTemplate);
+        when(restTemplateBuilder.basicAuthentication(anyString(), anyString())).thenReturn(restTemplateBuilder);
 
         // Manually instantiate CatalogClient with the mocked RestTemplateBuilder
         catalogClient = new CatalogClient(restTemplateBuilder,baseUrl);
@@ -67,13 +67,14 @@ public class CatalogClientTest {
     public void shouldReturnNullWhenMenuItemNotFound() {
         // Given
         Long menuItemId = 999L;
+        Long restaurantId = 999L;
 
         // Mock RestTemplate behavior to throw HttpClientErrorException.NotFound
-        when(restTemplate.getForObject("http://catalog-service/menu-items/" + menuItemId, MenuItemDTO.class))
+        when(restTemplate.getForObject("http://catalog-service/restaurants/" + restaurantId + "/menu-items/" + menuItemId, MenuItemDTO.class))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
         // When
-        MenuItemDTO response = catalogClient.getMenuItemById(menuItemId);
+        MenuItemDTO response = catalogClient.getMenuItemById(restaurantId, menuItemId);
 
         // Then
         assertNull(response);
@@ -85,14 +86,16 @@ public class CatalogClientTest {
     public void shouldFetchMenuItemById() {
         // Given
         Long menuItemId = 202L;
+        Long restaurantId = 999L;
+
         MenuItemDTO mockResponse = new MenuItemDTO(202L, "Burger", "Delicious burger", new BigDecimal("10.00"), 101L);
 
         // Mock RestTemplate behavior
-        when(restTemplate.getForObject("http://catalog-service/menu-items/" + menuItemId, MenuItemDTO.class))
+        when(restTemplate.getForObject("http://catalog-service/restaurants/" + restaurantId + "/menu-items/" + menuItemId, MenuItemDTO.class))
                 .thenReturn(mockResponse);
 
         // When
-        MenuItemDTO response = catalogClient.getMenuItemById(menuItemId);
+        MenuItemDTO response = catalogClient.getMenuItemById(restaurantId, menuItemId);
 
         // Then
         assertNotNull(response);

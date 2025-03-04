@@ -1,15 +1,13 @@
 package org.example.orderservice;
 
 
-
+import org.springframework.security.test.context.support.WithMockUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.orderservice.Controller.OrderController;
 import org.example.orderservice.DTO.*;
 import org.example.orderservice.Enum.OrderStatus;
 import org.example.orderservice.ExceptionHandler.InvalidOrderException;
 import org.example.orderservice.ExceptionHandler.OrderNotFoundException;
-import org.example.orderservice.Models.Order;
-import org.example.orderservice.OrderItem.OrderItem;
 import org.example.orderservice.Repository.OrderRepository;
 import org.example.orderservice.Service.OrderService;
 import org.junit.jupiter.api.Test;
@@ -23,12 +21,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 
 @WebMvcTest(OrderController.class)
 public class OrderControllerTest {
@@ -43,7 +40,9 @@ public class OrderControllerTest {
     private ObjectMapper objectMapper; // To convert Java objects to JSON
     @MockBean
     private OrderRepository orderRepository;
+
     @Test
+    @WithMockUser
     public void shouldReturnBadRequestForInvalidOrderData() throws Exception {
         // Given: Prepare invalid request object (e.g., missing restaurantId)
         OrderRequestDTO invalidRequestDTO = new OrderRequestDTO(
@@ -56,12 +55,14 @@ public class OrderControllerTest {
 
         // When & Then: Perform POST request and verify the response
         mockMvc.perform(post("/orders")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequestDTO))) // Convert request object to JSON
                 .andExpect(status().isBadRequest()); // Expect 400 Bad Request
     }
 
     @Test
+    @WithMockUser
     public void shouldReturnNotFoundWhenRestaurantNotFound() throws Exception {
         // Given: Prepare request object
         OrderRequestDTO requestDTO = new OrderRequestDTO(
@@ -78,6 +79,7 @@ public class OrderControllerTest {
 
         // When & Then: Perform POST request and verify the response
         mockMvc.perform(post("/orders")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO))) // Convert request object to JSON
                 .andExpect(status().isNotFound()); // Expect 404 Not Found
@@ -85,6 +87,7 @@ public class OrderControllerTest {
 
 
     @Test
+    @WithMockUser
     public void shouldCreateOrderSuccessfully() throws Exception {
         // Given: Prepare request and response objects
         OrderRequestDTO requestDTO = new OrderRequestDTO(
@@ -104,7 +107,8 @@ public class OrderControllerTest {
                 "Extra spicy",
                 "Leave at door",
                 OrderStatus.CREATED,
-                expectedTotalPrice
+                expectedTotalPrice,
+                "DE-101"
         );
 
         // Mock the service behavior
@@ -112,6 +116,7 @@ public class OrderControllerTest {
 
         // When & Then: Perform POST request and verify the response
         mockMvc.perform(post("/orders")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO))) // Convert request object to JSON
                 .andExpect(status().isCreated()) // Expect 201 Created
@@ -130,14 +135,15 @@ public class OrderControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void shouldReturnAllOrdersForUser() throws Exception {
         // Given: User ID and mock order responses
         Long userId = 1L;
         List<OrderResponseDTO> mockOrders = List.of(
                 new OrderResponseDTO(1L, 1L, 101L, List.of(new OrderItemDTO(2L, 3)),
-                        "Extra spicy", "Leave at door", OrderStatus.CREATED, new BigDecimal("600.00")),
+                        "Extra spicy", "Leave at door", OrderStatus.CREATED, new BigDecimal("600.00"),"DE-101"),
                 new OrderResponseDTO(2L, 1L, 102L, List.of(new OrderItemDTO(3L, 2)),
-                        "No onions", "Hand it to me", OrderStatus.CREATED, new BigDecimal("300.00"))
+                        "No onions", "Hand it to me", OrderStatus.CREATED, new BigDecimal("300.00"),"DE-102")
         );
 
         // Mock service response
@@ -145,6 +151,7 @@ public class OrderControllerTest {
 
         // When & Then: Perform GET request and verify the response
         mockMvc.perform(get("/orders/user/{userId}", userId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
@@ -155,6 +162,7 @@ public class OrderControllerTest {
         verify(orderService, times(1)).getOrdersByUserId(userId);
     }
     @Test
+    @WithMockUser
     public void shouldReturnBadRequestForEmptyOrderItems() throws Exception {
         // Given: Request with empty items list
         OrderRequestDTO invalidRequestDTO = new OrderRequestDTO(
@@ -163,11 +171,13 @@ public class OrderControllerTest {
 
         // When & Then: Perform POST request and expect 400
         mockMvc.perform(post("/orders")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequestDTO)))
                 .andExpect(status().isBadRequest());
     }
     @Test
+    @WithMockUser
     public void shouldReturnEmptyListWhenNoOrdersFoundForUser() throws Exception {
         // Given: User ID with no orders
         Long userId = 2L;
@@ -178,6 +188,7 @@ public class OrderControllerTest {
 
         // When & Then: Perform GET request and verify the response
         mockMvc.perform(get("/orders/user/{userId}", userId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
@@ -186,16 +197,19 @@ public class OrderControllerTest {
         verify(orderService, times(1)).getOrdersByUserId(userId);
     }
     @Test
+    @WithMockUser
     public void shouldReturnBadRequestForInvalidUserId() throws Exception {
         // Given: Invalid User ID
         String invalidUserId = "invalid";
 
         // When & Then: Perform GET request and verify the response
         mockMvc.perform(get("/orders/user/{userId}", invalidUserId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
     @Test
+    @WithMockUser
     public void shouldReturnInternalServerErrorOnServiceException() throws Exception {
         // Given: User ID and service exception
         Long userId = 1L;
@@ -205,6 +219,7 @@ public class OrderControllerTest {
 
         // When & Then: Perform GET request and verify the response
         mockMvc.perform(get("/orders/user/{userId}", userId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
@@ -214,6 +229,7 @@ public class OrderControllerTest {
 
 
     @Test
+    @WithMockUser
     public void shouldReturnBadRequestWhenOrderStatusIsNull() throws Exception {
         // Given: Order ID and status update request with null status
         Long orderId = 1L;
@@ -221,22 +237,26 @@ public class OrderControllerTest {
 
         // When & Then: Perform PATCH request and verify the response
         mockMvc.perform(patch("/orders/{orderId}/status", orderId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
     @Test
+    @WithMockUser
     public void shouldReturnBadRequestWhenStatusIsMissing() throws Exception {
         // Given: An empty request body (status is missing)
         String emptyRequestBody = "{}";
 
         // When & Then: Perform PATCH request and verify response
         mockMvc.perform(patch("/orders/1/status")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(emptyRequestBody)) // Sending an empty JSON body
                 .andExpect(status().isBadRequest()); // Expect 400 Bad Request
     }
     @Test
+    @WithMockUser
     public void shouldUpdateOrderStatusSuccessfully() throws Exception {
         // Given: A valid request with a new status
         UpdateOrderStatusRequest request = new UpdateOrderStatusRequest(OrderStatus.ASSIGNED);
@@ -244,12 +264,14 @@ public class OrderControllerTest {
 
         // When & Then: Perform PATCH request and verify success response
         mockMvc.perform(patch("/orders/1/status")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk()) // Expect 200 OK
                 .andExpect(content().string("Order status updated successfully"));
     }
     @Test
+    @WithMockUser
     public void shouldReturnNotFoundWhenOrderDoesNotExist() throws Exception {
         // Given: Order ID that doesn't exist
         Long nonExistentOrderId = 999L;
@@ -262,29 +284,34 @@ public class OrderControllerTest {
 
         // When & Then: Perform PATCH request and verify 404 response
         mockMvc.perform(patch("/orders/" + nonExistentOrderId + "/status")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isNotFound()) // Expect 404 Not Found
                 .andExpect(content().string("Order not found"));
     }
     @Test
+    @WithMockUser
     public void shouldReturnBadRequestForInvalidStatus() throws Exception {
         // Given: A request with an invalid status value
         String invalidRequestBody = "{\"status\": \"INVALID_STATUS\"}";
 
         // When & Then: Perform PATCH request and verify response
         mockMvc.perform(patch("/orders/1/status")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidRequestBody))
                 .andExpect(status().isBadRequest()); // Expect 400 Bad Request
     }
     @Test
+    @WithMockUser
     public void shouldReturnBadRequestWhenStatusIsNull() throws Exception {
         // Given: An empty request body (status is missing)
         String requestBody = "{\"status\": \"INVALID_STATUS\"}"; // Instead of explicit "status": null
 
         // When & Then: Perform PATCH request and verify response
         mockMvc.perform(patch("/orders/1/status")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest()); // Expect 400 Bad Request

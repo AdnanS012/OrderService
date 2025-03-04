@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ public class RestaurantControllerTest {
     private OrderServiceImpl orderService;
 
     @Test
+    @WithMockUser
     void shouldReturnAllRestaurants() throws Exception {
         List<RestaurantDTO> restaurants = List.of(new RestaurantDTO(1L, "Test Restaurant", "Test Address"));
 
@@ -41,6 +43,7 @@ public class RestaurantControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Test Restaurant"));
     }
     @Test
+    @WithMockUser
     void shouldReturnMenuItemsForRestaurant() throws Exception {
         List<MenuItemDTO> menuItems = List.of(new MenuItemDTO(1L, "Pizza", "Delicious Pizza", new BigDecimal("200.00"), 1L));
 

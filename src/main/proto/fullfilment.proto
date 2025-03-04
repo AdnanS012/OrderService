@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package fulfillment;
+
+
+option java_multiple_files = true;
+option java_package = "pb";
+
+service FulfillmentService {
+  rpc AssignOrder(AssignOrderRequest) returns (AssignOrderResponse);
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse);
+}
+
+message AssignOrderRequest {
+  string order_id = 1;
+  string location = 2;
+}
+
+message AssignOrderResponse {
+  string order_id = 1;
+  string delivery_personnel_id = 2;
+  string status = 3;
+}
+
+message UpdateOrderStatusRequest {
+  string order_id = 1;
+  string status = 2;
+}
+
+message UpdateOrderStatusResponse {
+  string order_id = 1;
+  string status = 2;
+}

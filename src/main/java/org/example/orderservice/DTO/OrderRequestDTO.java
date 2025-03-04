@@ -15,7 +15,7 @@ public class OrderRequestDTO {
     private List<OrderItemDTO> items;
     private String orderInstructions;
     private String deliveryInstructions;
-    private BigDecimal totalPrice;
+   // private BigDecimal totalPrice;
 
     public OrderRequestDTO() {}
 
@@ -33,6 +33,6 @@ public class OrderRequestDTO {
     public List<OrderItemDTO> getItems() { return items; }
     public String getOrderInstructions() { return orderInstructions; }
     public String getDeliveryInstructions() { return deliveryInstructions; }
-    public BigDecimal getTotalPrice() { return totalPrice; }
+    //public BigDecimal getTotalPrice() { return totalPrice; }
 
 }
