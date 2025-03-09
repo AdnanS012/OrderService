@@ -14,12 +14,12 @@ public class OrderResponseDTO {
     private String deliveryInstructions;
     private OrderStatus status;
     private BigDecimal totalPrice;
-    private String deliveryPersonnelId;
+    //private String deliveryPersonnelId;
 
     public OrderResponseDTO() {}
 
     public OrderResponseDTO(Long orderId, Long userId, Long restaurantId, List<OrderItemDTO> items,
-                            String orderInstructions, String deliveryInstructions, OrderStatus status, BigDecimal totalPrice,String deliveryPersonnelId) {
+                            String orderInstructions, String deliveryInstructions, OrderStatus status, BigDecimal totalPrice) {
         this.orderId = orderId;
         this.userId = userId;
         this.restaurantId = restaurantId;
@@ -28,7 +28,7 @@ public class OrderResponseDTO {
         this.deliveryInstructions = deliveryInstructions;
         this.status = status;
         this.totalPrice = totalPrice;
-        this.deliveryPersonnelId = deliveryPersonnelId;
+        //this.deliveryPersonnelId = deliveryPersonnelId;
     }
     public Long getOrderId() { return orderId; }
     public Long getUserId() { return userId; }
@@ -38,5 +38,5 @@ public class OrderResponseDTO {
     public String getDeliveryInstructions() { return deliveryInstructions; }
     public OrderStatus getStatus() { return status; }
     public BigDecimal getTotalPrice() { return totalPrice; }
-    public String getDeliveryPersonnelId() { return deliveryPersonnelId; }
+    //public String getDeliveryPersonnelId() { return deliveryPersonnelId; }
 }

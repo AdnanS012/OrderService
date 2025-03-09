@@ -40,7 +40,7 @@ public class OrderServiceImpl implements OrderService {
       if(restaurant == null){
           throw new InvalidOrderException("Restaurant not found");
       }
-        log.info("Restaurant found: {}", restaurant);
+
       //validate each MenuItem
       List<OrderItemDTO> validItems = new ArrayList<>();
       List<OrderItem> orderItem = new ArrayList<>();
@@ -92,8 +92,8 @@ public class OrderServiceImpl implements OrderService {
                 savedOrder.getId().toString(),
                 orderRequest.getDeliveryInstructions() // Assuming location is in delivery instructions
         );
-        // 🔹 Step 5: Update Order Status to "ASSIGNED"
-        savedOrder.updateStatus(OrderStatus.ASSIGNED);
+        //Step 5: Update Order Status to "ASSIGNED"
+        savedOrder.updateStatus(OrderStatus.PLACED);
         orderRepository.save(savedOrder);
         log.info("Order {} assigned to delivery personnel: {}", savedOrder.getId(), fulfillmentResponse.getDeliveryPersonnelId());
 
@@ -105,8 +105,7 @@ public class OrderServiceImpl implements OrderService {
                 savedOrder.getOrderInstructions(),
                 savedOrder.getDeliveryInstructions(),
                 savedOrder.getStatus(),
-                savedOrder.getTotalPrice(),
-                fulfillmentResponse.getDeliveryPersonnelId()
+                savedOrder.getTotalPrice()
         );
 
 }
@@ -130,9 +129,7 @@ public class OrderServiceImpl implements OrderService {
                     order.getOrderInstructions(),
                     order.getDeliveryInstructions(),
                     order.getStatus(),
-                    order.getTotalPrice(),
-                    null
-
+                    order.getTotalPrice()
             );
             orderResponseDTOs.add(orderResponseDTO);
         }
