@@ -97,7 +97,6 @@ public class OrderServiceTest {
         assertEquals("Leave at door", responseDTO.getDeliveryInstructions());
         assertEquals(OrderStatus.ASSIGNED, responseDTO.getStatus()); // Verify final status
         assertEquals(expectedTotalPrice, responseDTO.getTotalPrice());
-        assertNotNull(responseDTO.getDeliveryPersonnelId(), "Delivery personnel ID should be assigned");
 
         // Verify interactions
         verify(orderRepository, times(2)).save(any(Order.class)); // Should be saved twice

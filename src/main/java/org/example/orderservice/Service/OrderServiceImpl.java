@@ -11,6 +11,7 @@ import org.example.orderservice.Repository.OrderRepository;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pb.AssignOrderResponse;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -36,11 +37,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("Received order request: {}", orderRequest);
 
         //validate the Restaurant
-        RestaurantDTO restaurant = catalogClient.getRestaurantById(orderRequest.getRestaurantId());
-      if(restaurant == null){
-          throw new InvalidOrderException("Restaurant not found");
-      }
-        log.info("Restaurant found: {}", restaurant);
+        validateRestaurant(orderRequest.getRestaurantId());
       //validate each MenuItem
       List<OrderItemDTO> validItems = new ArrayList<>();
       List<OrderItem> orderItem = new ArrayList<>();
@@ -56,7 +53,6 @@ public class OrderServiceImpl implements OrderService {
 
       if(menuItem!=null){
           log.info("Fetched menu item: {}", menuItem);
-
           //Ensure the menu item belongs to the correct restaurant
           if (!menuItem.getRestaurantId().equals(orderRequest.getRestaurantId())) {
               log.warn("Menu item {} does not belong to restaurant {}", menuItem.getId(), orderRequest.getRestaurantId());
@@ -88,10 +84,7 @@ public class OrderServiceImpl implements OrderService {
                 );
         Order savedOrder = orderRepository.save(order);
         //Step 4: Call FulfillmentService via gRPC to Assign Delivery Personnel
-        pb.AssignOrderResponse fulfillmentResponse = fulfillmentClient.assignOrder(
-                savedOrder.getId().toString(),
-                orderRequest.getDeliveryInstructions() // Assuming location is in delivery instructions
-        );
+        AssignOrderResponse fulfillmentResponse = getAssignOrderResponse(orderRequest, savedOrder);
         // 🔹 Step 5: Update Order Status to "ASSIGNED"
         savedOrder.updateStatus(OrderStatus.ASSIGNED);
         orderRepository.save(savedOrder);
@@ -108,6 +101,23 @@ public class OrderServiceImpl implements OrderService {
                 savedOrder.getTotalPrice()
         );
 
+}
+
+    private AssignOrderResponse getAssignOrderResponse(OrderRequestDTO orderRequest, Order savedOrder) {
+        AssignOrderResponse fulfillmentResponse = fulfillmentClient.assignOrder(
+                savedOrder.getId().toString(),
+                orderRequest.getDeliveryInstructions() // Assuming location is in delivery instructions
+        );
+        return fulfillmentResponse;
+    }
+
+
+    private void validateRestaurant(Long restaurantId) {
+    RestaurantDTO restaurant = catalogClient.getRestaurantById(restaurantId);
+    if(restaurant == null){
+        throw new InvalidOrderException("Restaurant not found");
+    }
+    log.info("Restaurant found: {}", restaurant);
 }
 
     @Override

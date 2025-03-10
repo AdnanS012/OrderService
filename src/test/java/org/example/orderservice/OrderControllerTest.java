@@ -107,8 +107,8 @@ public class OrderControllerTest {
                 "Extra spicy",
                 "Leave at door",
                 OrderStatus.CREATED,
-                expectedTotalPrice,
-                "DE-101"
+                expectedTotalPrice
+
         );
 
         // Mock the service behavior
@@ -141,9 +141,9 @@ public class OrderControllerTest {
         Long userId = 1L;
         List<OrderResponseDTO> mockOrders = List.of(
                 new OrderResponseDTO(1L, 1L, 101L, List.of(new OrderItemDTO(2L, 3)),
-                        "Extra spicy", "Leave at door", OrderStatus.CREATED, new BigDecimal("600.00"),"DE-101"),
+                        "Extra spicy", "Leave at door", OrderStatus.CREATED, new BigDecimal("600.00")),
                 new OrderResponseDTO(2L, 1L, 102L, List.of(new OrderItemDTO(3L, 2)),
-                        "No onions", "Hand it to me", OrderStatus.CREATED, new BigDecimal("300.00"),"DE-102")
+                        "No onions", "Hand it to me", OrderStatus.CREATED, new BigDecimal("300.00"))
         );
 
         // Mock service response
